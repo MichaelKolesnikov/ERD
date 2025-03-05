@@ -1,0 +1,10 @@
+#Entity Entity1_name
+	attr1_name
+	attr2_name
+#Entity Entity2_name
+	attr1_name
+#Relation Relation1_name
+	Entity1_name
+	Entity2_name
+	[1,1]
+	[0,N]
