@@ -6,9 +6,9 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QTextEdit, QGraphicsView
 from PyQt5.QtCore import Qt, QLineF, QPointF, QObject, pyqtSignal
 from PyQt5.QtGui import QBrush, QColor, QFont
 
-from Attribute import Attribute
-from Entity import Entity
-from Relationship import Relationship
+from data_structures.Attribute import Attribute
+from data_structures.Entity import Entity
+from data_structures.Relationship import Relationship
 
 
 class PositionNotifier(QObject):
