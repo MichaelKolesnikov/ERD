@@ -1,10 +1,93 @@
-#Entity Entity1_name
-	attr1_name
-	attr2_name
-#Entity Entity2_name
-	attr1_name
-#Relation Relation1_name
-	Entity1_name
-	Entity2_name
-	[1,1]
-	[0,N]
+#Entity Address
+	state
+	city
+	street_name
+	postal_code
+
+#Entity School
+	name
+	
+#Entity Man
+	passport_series_number
+	full_name
+	birthday
+	
+#Entity Teacher
+#Entity SchoolChild
+
+#Entity Subject
+	name
+	score_mapping_json
+
+#Entity Exam
+	date_time
+
+#Entity Task
+	number
+	description
+	price
+	variant
+
+#Entity WrittenTask
+	grade
+
+#Relation is_teacher
+	Man[1,1]
+	Teacher[1,1]
+	
+#Relation is_schoolchild
+	Man[1,1]
+	SchoolChild[1,1]
+
+#Relation held_in
+	Exam[0,N]
+	School[1,1]
+
+#Relation place
+	School[1,1]
+	Address[1,1]
+
+#Relation lead
+	Teacher[0,N]
+	Subject[1,1]
+
+#Relation learn_in
+	SchoolChild[0,N]
+	School[1,1]
+
+#Relation live
+	SchoolChild[1,1]
+	Address[1,1]
+
+#Relation pass
+	SchoolChild[0,N]
+	Exam[0,N]
+
+#Relation view
+	Teacher[0,N]
+	Exam[0,N]
+
+#Relation check
+	Teacher[1,1]
+	WrittenTask[0,N]
+
+#Relation wrote
+	SchoolChild[1,1]
+	WrittenTask[0,N]
+
+#Relation define
+	Task[1,1]
+	WrittenTask[0,N]
+
+#Relation live_at
+	Teacher[1,1]
+	Address[1,1]
+
+#Relation define_
+	Subject[1,1]
+	Task[0,N]
+
+#Relation define
+	Subject[1,1]
+	Exam[0,N]
+

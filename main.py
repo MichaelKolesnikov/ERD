@@ -9,6 +9,8 @@ from PyQt5.QtGui import QBrush, QColor, QFont
 from data_structures.Attribute import Attribute
 from data_structures.Entity import Entity
 from data_structures.Relationship import Relationship
+from exception.ERDiagramException import ERDiagramException
+from exception.ParsingException import ParsingException
 
 
 class PositionNotifier(QObject):
@@ -29,9 +31,8 @@ def parse_code(code: str):
             while i < len(lines) and lines[i].startswith('\t'):
                 attr_line = lines[i].strip()
                 if attr_line:
-                    is_primary = attr_line.startswith('<u>') and attr_line.endswith('</u>')
-                    attr = attr_line[3:-4] if is_primary else attr_line
-                    attrs.append(Attribute(attr, is_primary))
+                    is_primary = lines[i].startswith("\tID ")
+                    attrs.append(Attribute(lines[i][1 + is_primary * 3:], is_primary))
                 i += 1
             entity.attributes = attrs
             entities.append(entity)
@@ -47,18 +48,18 @@ def parse_code(code: str):
             entities_part = []
             cardinalities_part = []
             attributes_part = []
-            step = 0
-            for line in rel_lines:
-                if line.startswith('['):
-                    step = 1
-                    cardinalities_part.append(line.strip('[]'))
-                elif step == 0:
-                    entities_part.append(line)
-                elif step == 1 and len(cardinalities_part) < len(entities_part):
-                    cardinalities_part.append(line.strip('[]'))
+            for cur_line in rel_lines:
+                if '[' in cur_line:
+                    brace_index = cur_line.index('[')
+                    if ']' not in cur_line[brace_index + 1: ]:
+                        raise ParsingException("brace wasn't closed")
+                    second_brace_index = cur_line.index(']', brace_index + 1)
+
+                    entities_part.append(cur_line[:brace_index])
+                    cardinalities_part.append(cur_line[brace_index + 1: second_brace_index])
                 else:
-                    is_primary = line.startswith('<u>') and line.endswith('</u>')
-                    attributes_part.append(Attribute(line, is_primary))
+                    is_primary = cur_line.startswith("ID ")
+                    attributes_part.append(Attribute(cur_line[3 if is_primary else 0:], is_primary))
             rel.entities = entities_part
             rel.cardinalities = []
             for c in cardinalities_part:
@@ -67,11 +68,10 @@ def parse_code(code: str):
                     rel.cardinalities.append((parts[0].strip(), parts[1].strip()))
             rel.attributes = attributes_part
             relationships.append(rel)
-            i += 1
         elif line == "":
             i += 1
         else:
-            raise "Wrong code"
+            raise ParsingException("wrong code")
     return entities, relationships
 
 
@@ -160,8 +160,32 @@ class RelationshipItem(QGraphicsEllipseItem):
         self.setFlags(QGraphicsItem.ItemIsMovable | QGraphicsItem.ItemSendsScenePositionChanges)
         self.setBrush(QBrush(QColor(200, 200, 255)))
         self.setRect(0, 0, 100, 60)
-        self.text = QGraphicsTextItem(relationship.name, self)
-        self.text.setPos(10, 20)
+        self.update_rect()
+
+    def update_rect(self):
+        attr_height = 20
+        header_height = 30
+        num_attrs = len(self.relationship.attributes)
+        rect_width = 150
+        rect_height = header_height + num_attrs * attr_height
+        self.setRect(0, 0, rect_width, rect_height)
+
+        # for child in self.childItems():
+        #     if isinstance(child, QGraphicsTextItem):
+        #         self.scene().removeItem(child)
+
+        header = QGraphicsTextItem(self.relationship.name, self)
+        header.setPos(5, 5)
+        y_pos = header_height
+        for attr in self.relationship.attributes:
+            attr, is_primary = attr.name, attr.is_primary
+            text = QGraphicsTextItem(self)
+            if is_primary:
+                text.setHtml(f"<u>{attr}</u>")
+            else:
+                text.setPlainText(attr)
+            text.setPos(5, y_pos)
+            y_pos += attr_height
 
     def itemChange(self, change, value):
         if change == QGraphicsItem.ItemPositionHasChanged:
@@ -242,7 +266,7 @@ class ERDiagramApp(QMainWindow):
         self.scene.clear()
         try:
             self.entities, self.relationships = parse_code(self.text_edit.toPlainText())
-        except BaseException as e:
+        except ERDiagramException as e:
             return
         self.pos_manager.load("positions.json")
 
